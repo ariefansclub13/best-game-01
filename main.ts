@@ -9,7 +9,7 @@
 // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
 
-import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDossier } from './vendor/makefun-game.ts';
@@ -37,3 +37,14 @@ writeFileSync(
     game_path_max_bytes: 1000,
   }),
 );
+
+// Fail loudly, never silently, when the hand-in is incomplete: a partial /output
+// would fail the gate anyway, so name exactly which piece is missing instead of
+// leaving a quiet half-finished folder behind.
+const dossierPath = join(out, 'dossier.json');
+const dossier = readFileSync(dossierPath, 'utf8');
+const shotCount = readdirSync(join(out, 'screenshots')).length;
+if (!existsSync(join(out, 'game', 'index.html'))) throw new Error('hand-in incomplete: game/index.html missing from ' + out);
+if (shotCount === 0) throw new Error('hand-in incomplete: no screenshots in ' + out);
+if (dossier.length === 0) throw new Error('hand-in incomplete: dossier.json is empty');
+console.log(`Kopi Panic! handed in: game/ + ${shotCount} screenshots + dossier.json (${dossier.length} bytes)`);
